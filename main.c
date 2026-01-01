@@ -25,12 +25,12 @@ int main(int argc, char **argv) {
     ptrace(PTRACE_ATTACH, pid, NULL, NULL);
     wait(NULL);
 
-    char tmp;
+    signed char tmp[8];
 
-    for (size_t i = 0; i < 1000; i++) 
+    for (size_t i = 0; i < 1000; i += 8) 
     {
-        if (read(fd, &tmp, 1))
-            ptrace(PTRACE_POKETEXT, pid, address + i, tmp);
+        if (read(fd, tmp, 8))
+            ptrace(PTRACE_POKETEXT, pid, address + i, *(long *)tmp);
     }
 
     struct user_regs_struct regs;
@@ -41,6 +41,8 @@ int main(int argc, char **argv) {
 
     ptrace(PTRACE_SETREGS, pid, NULL, &regs);
 
+fd_out:
+    close(fd);
 out:
     return ret_val;
 }
