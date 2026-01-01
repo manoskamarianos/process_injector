@@ -4,6 +4,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/user.h>
 
 int main(int argc, char **argv) {
 
@@ -29,8 +30,16 @@ int main(int argc, char **argv) {
     for (size_t i = 0; i < 1000; i++) 
     {
         if (read(fd, &tmp, 1))
-            ptrace(PTRACE_POKETEXT, pid, address + i, "A");
+            ptrace(PTRACE_POKETEXT, pid, address + i, tmp);
     }
+
+    struct user_regs_struct regs;
+
+    ptrace(PTRACE_GETREGS, pid, NULL, &regs);
+
+    regs.rip = address + 2;
+
+    ptrace(PTRACE_SETREGS, pid, NULL, &regs);
 
 out:
     return ret_val;
