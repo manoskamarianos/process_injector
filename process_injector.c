@@ -34,9 +34,11 @@ int main(int argc, char **argv) {
         goto out;
     }
 
+    // Attach to process
     ptrace(PTRACE_ATTACH, pid, NULL, NULL);
     wait(NULL);
 
+    // Write payload to process memory
     size_t i = 0;
     while (read(fd, tmp, 8)) 
     {
@@ -44,6 +46,7 @@ int main(int argc, char **argv) {
         i += 8;
     }
 
+    // Change rip to point at payload start
     ptrace(PTRACE_GETREGS, pid, NULL, &regs);
 
     regs.rip = address + 2;
